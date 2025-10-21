@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  clerkUserId  String   @unique
+  email        String   @unique
+  firstName    String?
+  lastName     String?
+  role         Role     @default(ADMIN)
+  companyId    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  companyAdmin Company? @relation("CompanyAdmin")
+  companyUser  Company? @relation("CompanyUsers", fields: [companyId], references: [id])
+}
+
+model Company {
+  id          String     @id @default(uuid())
+  name        String
+  adminUserId String     @unique
+  plan        String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  adminUser   User       @relation("CompanyAdmin", fields: [adminUserId], references: [id])
+  reminders   Reminder[]
+  User        User[]     @relation("CompanyUsers")
+}
+
+model Reminder {
+  id          String          @id @default(uuid())
+  companyId   String
+  documentId  String
+  channel     ReminderChannel
+  scheduledAt DateTime
+  sentAt      DateTime?
+  status      String          @default("PENDING")
+  message     String?
+  createdAt   DateTime        @default(now())
+  company     Company         @relation(fields: [companyId], references: [id])
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  STAFF
+  DRIVER
+}
+
+enum ReminderChannel {
+  EMAIL
+  SMS
+}
